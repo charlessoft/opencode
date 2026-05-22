@@ -6,7 +6,7 @@ WORKDIR /repo
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl unzip git python3 make g++ nodejs npm && rm -rf /var/lib/apt/lists/*
 RUN curl -fsSL https://bun.sh/install | bash -s -- bun-v1.3.13
 RUN npm install -g node-gyp
-COPY package.json bun.lockb bunfig.toml turbo.json tsconfig.json ./
+COPY package.json bun.lock bunfig.toml turbo.json tsconfig.json ./
 COPY patches ./patches
 COPY packages ./packages
 RUN sed -i 's/\r$//' ./patches/*.patch

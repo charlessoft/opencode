@@ -1,0 +1,11 @@
+.git
+.gitignore
+node_modules
+**/node_modules
+**/dist
+**/.turbo
+**/.cache
+**/.next
+**/coverage
+**/.artifacts
+.DS_Store
