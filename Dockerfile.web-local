@@ -1,0 +1,30 @@
+FROM ubuntu:24.04 AS deps
+ARG DEBIAN_FRONTEND=noninteractive
+ENV BUN_INSTALL=/root/.bun
+ENV PATH=${BUN_INSTALL}/bin:${PATH}
+WORKDIR /repo
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl unzip git python3 make g++ nodejs npm && rm -rf /var/lib/apt/lists/*
+RUN curl -fsSL https://bun.sh/install | bash -s -- bun-v1.3.13
+RUN npm install -g node-gyp
+COPY package.json bun.lockb bunfig.toml turbo.json tsconfig.json ./
+COPY patches ./patches
+COPY packages ./packages
+RUN sed -i 's/\r$//' ./patches/*.patch
+RUN bun --version
+RUN bun install --frozen-lockfile
+
+FROM ubuntu:24.04
+ARG DEBIAN_FRONTEND=noninteractive
+ENV BUN_INSTALL=/root/.bun
+ENV PATH=${BUN_INSTALL}/bin:${PATH}
+WORKDIR /repo
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
+COPY --from=deps /root/.bun /root/.bun
+COPY --from=deps /repo /repo
+RUN mkdir -p /workspace/hft_document /data /config /state /cache
+WORKDIR /workspace/hft_document
+ENV XDG_DATA_HOME=/data
+ENV XDG_CONFIG_HOME=/config
+ENV XDG_STATE_HOME=/state
+ENV XDG_CACHE_HOME=/cache
+ENTRYPOINT ["bun", "run", "--conditions=browser", "/repo/packages/opencode/src/index.ts"]
