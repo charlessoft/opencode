@@ -5,6 +5,7 @@ import { NamedError } from "@opencode-ai/core/util/error"
 import { Skill } from "../../src/skill"
 import { Permission } from "../../src/permission"
 import { SystemPrompt } from "../../src/session/system"
+import { Config } from "../../src/config/config"
 import { testEffect } from "../lib/effect"
 
 const skills: Skill.Info[] = [
@@ -50,6 +51,21 @@ const it = testEffect(
           all: () => Effect.succeed(skills),
           dirs: () => Effect.succeed([]),
           available: () => Effect.succeed(skills),
+        }),
+      ),
+    ),
+    Layer.provide(
+      Layer.succeed(
+        Config.Service,
+        Config.Service.of({
+          get: () => Effect.succeed({} as Config.Info),
+          getGlobal: () => Effect.succeed({} as Config.Info),
+          getConsoleState: () => Effect.succeed({} as any),
+          update: () => Effect.succeed(undefined),
+          updateGlobal: () => Effect.succeed({ info: {} as Config.Info, changed: false }),
+          invalidate: () => Effect.succeed(undefined),
+          directories: () => Effect.succeed([]),
+          waitForDependencies: () => Effect.succeed(undefined),
         }),
       ),
     ),
