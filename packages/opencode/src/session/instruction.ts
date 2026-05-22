@@ -143,6 +143,23 @@ export const layer: Layer.Layer<
         }
       }
 
+      if (config.knowledgeBase?.instructions) {
+        const raw = config.knowledgeBase.instructions
+        if (!raw.startsWith("https://") && !raw.startsWith("http://")) {
+          const instruction = raw.startsWith("~/") ? path.join(global.home, raw.slice(2)) : raw
+          const matches = yield* (
+            path.isAbsolute(instruction)
+              ? fs.glob(path.basename(instruction), {
+                  cwd: path.dirname(instruction),
+                  absolute: true,
+                  include: "file",
+                })
+              : relative(instruction)
+          ).pipe(Effect.catch(() => Effect.succeed([] as string[])))
+          matches.forEach((item) => paths.add(path.resolve(item)))
+        }
+      }
+
       return paths
     })
 

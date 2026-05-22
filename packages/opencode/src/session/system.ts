@@ -1,6 +1,9 @@
+import path from "path"
+import os from "os"
 import { Context, Effect, Layer } from "effect"
 
 import { InstanceState } from "@/effect/instance-state"
+import { Config } from "@/config/config"
 
 import PROMPT_ANTHROPIC from "./prompt/anthropic.txt"
 import PROMPT_DEFAULT from "./prompt/default.txt"
@@ -47,7 +50,9 @@ export const layer = Layer.effect(
     return Service.of({
       environment: Effect.fn("SystemPrompt.environment")(function* (model: Provider.Model) {
         const ctx = yield* InstanceState.context
-        return [
+        const configService = yield* Config.Service
+        const cfg = yield* configService.get()
+        const parts: string[] = [
           [
             `You are powered by the model named ${model.api.id}. The exact model ID is ${model.providerID}/${model.api.id}`,
             `Here is some useful information about the environment you are running in:`,
@@ -60,6 +65,25 @@ export const layer = Layer.effect(
             `</env>`,
           ].join("\n"),
         ]
+
+        if (cfg.knowledgeBase?.path) {
+          const kbPath = cfg.knowledgeBase.path.startsWith("~/")
+            ? path.join(os.homedir(), cfg.knowledgeBase.path.slice(2))
+            : cfg.knowledgeBase.path
+          const resolved = path.isAbsolute(kbPath) ? kbPath : path.resolve(ctx.worktree, kbPath)
+          parts.push([
+            `<knowledge-base>`,
+            `  Directory: ${resolved}`,
+            `  This directory is a dedicated knowledge base, separate from the current working directory when they differ.`,
+            `  Before answering domain-specific questions or generating code from documentation, first search this directory with grep, glob, and read.`,
+            `  When using grep, glob, or read for knowledge-base lookup, pass explicit paths under this directory instead of relying on the default working directory.`,
+            `  Summarize the relevant documents you found, then generate the answer or code from those findings.`,
+            `  If knowledge-base files were used, mention the file paths you consulted in the final answer.`,
+            `</knowledge-base>`,
+          ].join("\n"))
+        }
+
+        return parts
       }),
 
       skills: Effect.fn("SystemPrompt.skills")(function* (agent: Agent.Info) {

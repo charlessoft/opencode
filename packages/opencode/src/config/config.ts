@@ -37,6 +37,7 @@ import { ConfigParse } from "./parse"
 import { ConfigPaths } from "./paths"
 import { ConfigPermission } from "./permission"
 import { ConfigPlugin } from "./plugin"
+import { ConfigKnowledgeBase } from "./knowledge-base"
 import { ConfigProvider } from "./provider"
 import { ConfigReference } from "./reference"
 import { ConfigServer } from "./server"
@@ -146,6 +147,9 @@ export const Info = Schema.Struct({
   skills: Schema.optional(ConfigSkills.Info).annotate({ description: "Additional skill folder paths" }),
   reference: Schema.optional(ConfigReference.Info).annotate({
     description: "Named git or local directory references that can be @ mentioned as Scout-backed subagents",
+  }),
+  knowledgeBase: Schema.optional(ConfigKnowledgeBase.Info).annotate({
+    description: "Knowledge base directory and search instructions for Q&A mode",
   }),
   watcher: Schema.optional(
     Schema.Struct({
