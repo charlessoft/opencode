@@ -7,6 +7,11 @@
   "packageManager": "bun@1.3.13",
   "scripts": {
     "dev": "bun run --cwd packages/opencode --conditions=browser src/index.ts",
+    "web:bg:start": "bash ./script/web-bg.sh start",
+    "web:bg:stop": "bash ./script/web-bg.sh stop",
+    "web:bg:restart": "bash ./script/web-bg.sh restart",
+    "web:bg:status": "bash ./script/web-bg.sh status",
+    "web:bg:logs": "bash ./script/web-bg.sh logs",
     "dev:desktop": "bun --cwd packages/desktop dev",
     "dev:web": "bun --cwd packages/app dev",
     "dev:console": "ulimit -n 10240 2>/dev/null; bun run --cwd packages/console/app dev",

@@ -161,14 +161,20 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
       const fileTree = value.fileTree
       const migratedFileTree = (() => {
         if (!isRecord(fileTree)) return fileTree
-        if (fileTree.tab === "changes" || fileTree.tab === "all") return fileTree
+        if (fileTree.tab === "all") return fileTree
+        if (fileTree.tab === "changes") {
+          return {
+            ...fileTree,
+            tab: "all",
+          }
+        }
 
         const width = typeof fileTree.width === "number" ? fileTree.width : DEFAULT_FILE_TREE_WIDTH
         return {
           ...fileTree,
           opened: true,
           width: width === 260 ? DEFAULT_FILE_TREE_WIDTH : width,
-          tab: "changes",
+          tab: "all",
         }
       })()
 
@@ -226,7 +232,7 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
       }
     }
 
-    const target = Persist.global("layout", ["layout.v6"])
+    const target = Persist.global("layout", ["layout.v7", "layout.v6"])
     const [store, setStore, _, ready] = persisted(
       { ...target, migrate },
       createStore({
@@ -247,7 +253,7 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
         fileTree: {
           opened: false,
           width: DEFAULT_FILE_TREE_WIDTH,
-          tab: "changes" as "changes" | "all",
+          tab: "all" as "changes" | "all",
         },
         session: {
           width: DEFAULT_SESSION_WIDTH,
@@ -620,7 +626,7 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
       fileTree: {
         opened: createMemo(() => store.fileTree?.opened ?? true),
         width: createMemo(() => store.fileTree?.width ?? DEFAULT_FILE_TREE_WIDTH),
-        tab: createMemo(() => store.fileTree?.tab ?? "changes"),
+        tab: createMemo(() => store.fileTree?.tab ?? "all"),
         setTab(tab: "changes" | "all") {
           if (!store.fileTree) {
             setStore("fileTree", { opened: true, width: DEFAULT_FILE_TREE_WIDTH, tab })
@@ -630,28 +636,28 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
         },
         open() {
           if (!store.fileTree) {
-            setStore("fileTree", { opened: true, width: DEFAULT_FILE_TREE_WIDTH, tab: "changes" })
+            setStore("fileTree", { opened: true, width: DEFAULT_FILE_TREE_WIDTH, tab: "all" })
             return
           }
           setStore("fileTree", "opened", true)
         },
         close() {
           if (!store.fileTree) {
-            setStore("fileTree", { opened: false, width: DEFAULT_FILE_TREE_WIDTH, tab: "changes" })
+            setStore("fileTree", { opened: false, width: DEFAULT_FILE_TREE_WIDTH, tab: "all" })
             return
           }
           setStore("fileTree", "opened", false)
         },
         toggle() {
           if (!store.fileTree) {
-            setStore("fileTree", { opened: true, width: DEFAULT_FILE_TREE_WIDTH, tab: "changes" })
+            setStore("fileTree", { opened: true, width: DEFAULT_FILE_TREE_WIDTH, tab: "all" })
             return
           }
           setStore("fileTree", "opened", (x) => !x)
         },
         resize(width: number) {
           if (!store.fileTree) {
-            setStore("fileTree", { opened: true, width, tab: "changes" })
+            setStore("fileTree", { opened: true, width, tab: "all" })
             return
           }
           setStore("fileTree", "width", width)

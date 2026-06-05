@@ -435,7 +435,7 @@ export default function Page() {
   const isChildSession = createMemo(() => !!info()?.parentID)
   const diffs = createMemo(() => (params.id ? list(sync.data.session_diff[params.id]) : []))
   const canReview = createMemo(() => !!sync.project)
-  const reviewTab = createMemo(() => isDesktop())
+  const reviewTab = createMemo(() => false)
   const tabState = createSessionTabs({
     tabs,
     pathFromTab: file.pathFromTab,
@@ -582,11 +582,9 @@ export default function Page() {
     list.push("turn")
     return list
   })
-  const mobileChanges = createMemo(() => !isDesktop() && store.mobileTab === "changes")
+  const mobileChanges = createMemo(() => false)
   const wantsReview = createMemo(() =>
-    isDesktop()
-      ? desktopFileTreeOpen() || (desktopReviewOpen() && activeTab() === "review")
-      : store.mobileTab === "changes",
+    isDesktop() ? desktopFileTreeOpen() || (desktopReviewOpen() && activeTab() === "review") : false,
   )
   const vcsMode = createMemo<VcsMode | undefined>(() => {
     if (store.changes === "git" || store.changes === "branch") return store.changes
@@ -999,8 +997,8 @@ export default function Page() {
     ),
   )
 
-  const fileTreeTab = () => layout.fileTree.tab()
-  const setFileTreeTab = (value: "changes" | "all") => layout.fileTree.setTab(value)
+  const fileTreeTab = () => (layout.fileTree.tab() === "changes" ? "all" : layout.fileTree.tab())
+  const setFileTreeTab = (_value: "changes" | "all") => layout.fileTree.setTab("all")
 
   const [tree, setTree] = createStore({
     reviewScroll: undefined as HTMLDivElement | undefined,
@@ -1802,21 +1800,11 @@ export default function Page() {
             <Tabs.List>
               <Tabs.Trigger
                 value="session"
-                class="!w-1/2 !max-w-none"
+                class="!w-full !max-w-none !border-r-0"
                 classes={{ button: "w-full" }}
                 onClick={() => setStore("mobileTab", "session")}
               >
                 {language.t("session.tab.session")}
-              </Tabs.Trigger>
-              <Tabs.Trigger
-                value="changes"
-                class="!w-1/2 !max-w-none !border-r-0"
-                classes={{ button: "w-full" }}
-                onClick={() => setStore("mobileTab", "changes")}
-              >
-                {hasReview()
-                  ? language.t("session.review.filesChanged", { count: reviewCount() })
-                  : language.t("session.review.change.other")}
               </Tabs.Trigger>
             </Tabs.List>
           </Tabs>
