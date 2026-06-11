@@ -1,0 +1,1117 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OpenCode SSE Test</title>
+    <style>
+      :root {
+        --bg: #0f172a;
+        --panel: #111827;
+        --panel-2: #1f2937;
+        --border: #334155;
+        --text: #e5e7eb;
+        --muted: #94a3b8;
+        --accent: #22c55e;
+        --accent-2: #38bdf8;
+        --warn: #f59e0b;
+        --danger: #ef4444;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "IBM Plex Mono", Consolas, monospace;
+        color: var(--text);
+        background:
+          radial-gradient(circle at top right, rgba(56, 189, 248, 0.12), transparent 30%),
+          radial-gradient(circle at bottom left, rgba(34, 197, 94, 0.12), transparent 24%),
+          var(--bg);
+      }
+
+      .page {
+        width: min(1400px, calc(100vw - 32px));
+        margin: 24px auto;
+        display: grid;
+        gap: 16px;
+      }
+
+      .hero,
+      .panel {
+        background: rgba(17, 24, 39, 0.92);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        box-shadow: 0 18px 60px rgba(0, 0, 0, 0.28);
+      }
+
+      .hero {
+        padding: 20px 22px;
+      }
+
+      .hero h1 {
+        margin: 0 0 6px;
+        font-size: 22px;
+      }
+
+      .hero p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .layout {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: 420px 1fr;
+      }
+
+      .panel {
+        padding: 16px;
+      }
+
+      .panel h2 {
+        margin: 0 0 14px;
+        font-size: 14px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .field {
+        display: grid;
+        gap: 6px;
+        margin-bottom: 12px;
+      }
+
+      .field label {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .field input,
+      .field textarea {
+        width: 100%;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--panel-2);
+        color: var(--text);
+        padding: 10px 12px;
+        font: inherit;
+      }
+
+      .field textarea {
+        min-height: 132px;
+        resize: vertical;
+      }
+
+      .grid-2 {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 8px;
+      }
+
+      button {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--panel-2);
+        color: var(--text);
+        padding: 10px 12px;
+        font: inherit;
+        cursor: pointer;
+      }
+
+      button.primary {
+        border-color: rgba(34, 197, 94, 0.6);
+        background: rgba(34, 197, 94, 0.14);
+      }
+
+      button.info {
+        border-color: rgba(56, 189, 248, 0.6);
+        background: rgba(56, 189, 248, 0.14);
+      }
+
+      button.warn {
+        border-color: rgba(245, 158, 11, 0.6);
+        background: rgba(245, 158, 11, 0.14);
+      }
+
+      .status {
+        font-size: 12px;
+        color: var(--muted);
+        padding: 10px 12px;
+        border-radius: 10px;
+        background: rgba(148, 163, 184, 0.08);
+        border: 1px solid rgba(148, 163, 184, 0.18);
+      }
+
+      .status.ok {
+        color: #86efac;
+        border-color: rgba(34, 197, 94, 0.25);
+        background: rgba(34, 197, 94, 0.1);
+      }
+
+      .status.err {
+        color: #fca5a5;
+        border-color: rgba(239, 68, 68, 0.25);
+        background: rgba(239, 68, 68, 0.1);
+      }
+
+      .output-grid {
+        display: grid;
+        gap: 16px;
+      }
+
+      .summary-grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .summary-card {
+        border: 1px solid #1e293b;
+        border-radius: 12px;
+        background: #020617;
+        padding: 12px;
+        display: grid;
+        gap: 6px;
+      }
+
+      .summary-card-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+      }
+
+      .summary-card-value {
+        font-size: 14px;
+        line-height: 1.45;
+        color: var(--text);
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      .stack {
+        display: grid;
+        gap: 16px;
+      }
+
+      .stream {
+        min-height: 180px;
+        max-height: 280px;
+        overflow: auto;
+        white-space: pre-wrap;
+        word-break: break-word;
+        background: #020617;
+        border: 1px solid #1e293b;
+        border-radius: 12px;
+        padding: 12px;
+        line-height: 1.45;
+        font-size: 12px;
+      }
+
+      .stream.reasoning {
+        min-height: 220px;
+        max-height: 360px;
+      }
+
+      .timeline {
+        display: grid;
+        gap: 10px;
+      }
+
+      .timeline-item {
+        border: 1px solid #1e293b;
+        border-radius: 12px;
+        background: #020617;
+        padding: 12px;
+        display: grid;
+        gap: 6px;
+      }
+
+      .timeline-item.system {
+        border-color: rgba(56, 189, 248, 0.32);
+      }
+
+      .timeline-item.tool {
+        border-color: rgba(245, 158, 11, 0.32);
+      }
+
+      .timeline-item.done {
+        border-color: rgba(34, 197, 94, 0.32);
+      }
+
+      .timeline-item.error {
+        border-color: rgba(239, 68, 68, 0.4);
+      }
+
+      .timeline-item-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .timeline-item-title {
+        font-size: 13px;
+        color: var(--text);
+      }
+
+      .timeline-item-meta {
+        font-size: 11px;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .timeline-item-detail {
+        font-size: 12px;
+        line-height: 1.5;
+        color: var(--muted);
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      .message-list {
+        display: grid;
+        gap: 12px;
+      }
+
+      .message-card {
+        border: 1px solid #1e293b;
+        border-radius: 12px;
+        background: #020617;
+        padding: 12px;
+        display: grid;
+        gap: 8px;
+      }
+
+      .message-role {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--accent-2);
+      }
+
+      .message-part {
+        white-space: pre-wrap;
+        word-break: break-word;
+        line-height: 1.5;
+        font-size: 12px;
+      }
+
+      .message-part.reasoning {
+        color: #cbd5e1;
+      }
+
+      .message-part.tool {
+        color: #fcd34d;
+      }
+
+      .raw-events {
+        margin-top: 12px;
+      }
+
+      .raw-events summary {
+        cursor: pointer;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .hint {
+        margin-top: 10px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .quickstart {
+        margin-top: 14px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .quickstart p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .mono {
+        color: var(--accent-2);
+      }
+
+      @media (max-width: 1000px) {
+        .layout {
+          grid-template-columns: 1fr;
+        }
+
+        .summary-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <section class="hero">
+        <h1>OpenCode SSE Test</h1>
+        <p>
+          Use this page to connect to <span class="mono">/global/event</span>, create a session, send a
+          <span class="mono">prompt_async</span>, and watch whether
+          <span class="mono">message.part.updated</span> emits
+          <span class="mono">reasoning</span>.
+        </p>
+        <div class="quickstart">
+          <p>
+            Local startup steps are documented in <span class="mono">docs/opencode-sse-test.md</span>.
+            Use that file for the two-terminal setup, then come back here to connect SSE and send
+            <span class="mono">prompt_async</span>.
+          </p>
+        </div>
+      </section>
+
+      <div class="layout">
+        <section class="panel">
+          <h2>Connection</h2>
+
+          <div class="field">
+            <label for="serverUrl">Server URL</label>
+            <input id="serverUrl" value="http://127.0.0.1:8080" />
+          </div>
+
+          <div class="field">
+            <label for="directory">Workspace Directory</label>
+            <input id="directory" value="D:/workspace/foxit/opencode" />
+          </div>
+
+          <div class="grid-2">
+            <div class="field">
+              <label for="username">Username (optional)</label>
+              <input id="username" placeholder="opencode" />
+            </div>
+            <div class="field">
+              <label for="password">Password (optional)</label>
+              <input id="password" type="password" placeholder="server password" />
+            </div>
+          </div>
+
+          <div id="connectionStatus" class="status">Disconnected</div>
+
+          <div class="actions">
+            <button id="connectBtn" class="info">Connect SSE</button>
+            <button id="verifyPathBtn">Verify Path</button>
+            <button id="showKbConfigBtn">Show KB Config</button>
+            <button id="disconnectBtn">Disconnect SSE</button>
+            <button id="clearLogsBtn">Clear Logs</button>
+          </div>
+
+          <div class="hint">
+            Open this page from a localhost static server, not <span class="mono">file://</span>. The OpenCode server
+            allows CORS from localhost by default.
+          </div>
+
+          <div id="pathStatus" class="status" style="margin-top: 12px">Path not verified yet</div>
+
+          <h2 style="margin-top: 22px">Knowledge Check</h2>
+
+          <div class="field">
+            <label for="verifyFilePath">File To Verify</label>
+            <input id="verifyFilePath" value="VERIFY_PATH.txt" />
+          </div>
+
+          <div class="actions">
+            <button id="verifyFileBtn">Read File</button>
+          </div>
+
+          <div id="verifyFileStatus" class="status">Knowledge file not verified yet</div>
+
+          <h2 style="margin-top: 22px">Session</h2>
+
+          <div class="field">
+            <label for="sessionId">Session ID</label>
+            <input id="sessionId" placeholder="created session id appears here" />
+          </div>
+
+          <div class="grid-2">
+            <div class="field">
+              <label for="agent">Agent (optional)</label>
+              <input id="agent" placeholder="build" />
+            </div>
+            <div class="field">
+              <label for="model">Model (optional)</label>
+              <input id="model" placeholder="openai/gpt-5" />
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="prompt">Prompt</label>
+            <textarea id="prompt">Please search the knowledge base first, using grep/glob/read against the configured knowledgeBase directory. List the knowledge-base file paths you consulted, summarize the relevant constraints or examples you found, and then generate code or an answer based on those findings instead of memory.</textarea>
+          </div>
+
+          <div id="sessionStatus" class="status">No session yet</div>
+
+          <div class="actions">
+            <button id="createSessionBtn" class="primary">Create Session</button>
+            <button id="sendPromptBtn" class="warn">Send prompt_async</button>
+            <button id="fetchMessagesBtn">Fetch Messages</button>
+          </div>
+        </section>
+
+        <section class="stack">
+          <section class="panel">
+            <h2>Live Overview</h2>
+            <div class="summary-grid">
+              <div class="summary-card">
+                <div class="summary-card-label">Current Phase</div>
+                <div id="phaseOutput" class="summary-card-value">Waiting for session</div>
+              </div>
+              <div class="summary-card">
+                <div class="summary-card-label">Current Action</div>
+                <div id="actionOutput" class="summary-card-value">Idle</div>
+              </div>
+              <div class="summary-card">
+                <div class="summary-card-label">Current Tool</div>
+                <div id="toolOutput" class="summary-card-value">No tool activity yet</div>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel output-grid">
+            <div>
+              <h2>Reasoning</h2>
+              <div id="reasoningOutput" class="stream reasoning"></div>
+            </div>
+            <div>
+              <h2>Assistant Reply</h2>
+              <div id="textOutput" class="stream"></div>
+            </div>
+          </section>
+
+          <section class="panel">
+            <h2>Activity Timeline</h2>
+            <div id="activityLog" class="timeline"></div>
+            <details class="raw-events">
+              <summary>Show raw event JSON</summary>
+              <div id="eventLog" class="stream"></div>
+            </details>
+          </section>
+
+          <section class="panel">
+            <h2>Latest Messages</h2>
+            <div id="messagesOutput" class="message-list"></div>
+          </section>
+        </section>
+      </div>
+    </div>
+
+    <script>
+      const el = {
+        serverUrl: document.getElementById("serverUrl"),
+        directory: document.getElementById("directory"),
+        username: document.getElementById("username"),
+        password: document.getElementById("password"),
+        connectionStatus: document.getElementById("connectionStatus"),
+        connectBtn: document.getElementById("connectBtn"),
+        verifyPathBtn: document.getElementById("verifyPathBtn"),
+        showKbConfigBtn: document.getElementById("showKbConfigBtn"),
+        disconnectBtn: document.getElementById("disconnectBtn"),
+        clearLogsBtn: document.getElementById("clearLogsBtn"),
+        pathStatus: document.getElementById("pathStatus"),
+        verifyFilePath: document.getElementById("verifyFilePath"),
+        verifyFileBtn: document.getElementById("verifyFileBtn"),
+        verifyFileStatus: document.getElementById("verifyFileStatus"),
+        sessionId: document.getElementById("sessionId"),
+        agent: document.getElementById("agent"),
+        model: document.getElementById("model"),
+        prompt: document.getElementById("prompt"),
+        sessionStatus: document.getElementById("sessionStatus"),
+        createSessionBtn: document.getElementById("createSessionBtn"),
+        sendPromptBtn: document.getElementById("sendPromptBtn"),
+        fetchMessagesBtn: document.getElementById("fetchMessagesBtn"),
+        phaseOutput: document.getElementById("phaseOutput"),
+        actionOutput: document.getElementById("actionOutput"),
+        toolOutput: document.getElementById("toolOutput"),
+        reasoningOutput: document.getElementById("reasoningOutput"),
+        textOutput: document.getElementById("textOutput"),
+        activityLog: document.getElementById("activityLog"),
+        eventLog: document.getElementById("eventLog"),
+        messagesOutput: document.getElementById("messagesOutput"),
+      }
+
+      let eventSource
+      let activeReasoning = ""
+      let activeText = ""
+      const activityByKey = new Map()
+
+      function serverBase() {
+        return el.serverUrl.value.trim().replace(/\/+$/, "")
+      }
+
+      function directoryValue() {
+        return el.directory.value.trim()
+      }
+
+      function authHeaders() {
+        if (!el.password.value) return {}
+        const username = el.username.value.trim() || "opencode"
+        return {
+          Authorization: "Basic " + btoa(username + ":" + el.password.value),
+        }
+      }
+
+      function requestHeaders() {
+        return {
+          "Content-Type": "application/json",
+          "x-opencode-directory": encodeURIComponent(directoryValue()),
+          ...authHeaders(),
+        }
+      }
+
+      function setStatus(node, text, kind) {
+        node.textContent = text
+        node.className = "status" + (kind ? " " + kind : "")
+      }
+
+      function append(node, value) {
+        const text = typeof value === "string" ? value : JSON.stringify(value, null, 2)
+        node.textContent += (node.textContent ? "\n" : "") + text
+        node.scrollTop = node.scrollHeight
+      }
+
+      function titleCase(value) {
+        return String(value || "")
+          .replace(/[_-]+/g, " ")
+          .replace(/\s+/g, " ")
+          .trim()
+          .replace(/\b\w/g, (match) => match.toUpperCase())
+      }
+
+      function summarize(value, fallback = "No details") {
+        if (value === undefined || value === null) return fallback
+        if (typeof value === "string") {
+          const compact = value.trim().replace(/\s+/g, " ")
+          if (!compact) return fallback
+          return compact.length > 180 ? compact.slice(0, 177) + "..." : compact
+        }
+        if (typeof value === "number" || typeof value === "boolean") return String(value)
+        if (Array.isArray(value)) return value.length === 0 ? fallback : summarize(value[0], fallback)
+        if (typeof value === "object") {
+          const preferred = ["description", "command", "query", "pattern", "url", "path", "filePath", "text", "prompt"]
+          for (const key of preferred) {
+            if (key in value) return summarize(value[key], fallback)
+          }
+          const json = JSON.stringify(value)
+          return json.length > 180 ? json.slice(0, 177) + "..." : json
+        }
+        return fallback
+      }
+
+      function setOverview(node, text) {
+        node.textContent = text
+      }
+
+      function describeSessionStatus(status) {
+        if (!status || typeof status !== "object") return "Running"
+        if (typeof status.type === "string") {
+          if (status.type === "idle") return "Idle"
+          if (status.type === "running") return "Running"
+          return titleCase(status.type)
+        }
+        return summarize(status, "Running")
+      }
+
+      function describeTool(part) {
+        const status = part.state?.status || "updated"
+        if (part.tool === "task") {
+          const taskName = summarize(part.state?.input?.description || part.state?.input?.subagent_type, "task")
+          return {
+            title: titleCase(status) + ": " + taskName,
+            detail: summarize(part.state?.input, "Task started"),
+          }
+        }
+
+        if (status === "error") {
+          return {
+            title: part.tool + " failed",
+            detail: summarize(part.state?.error || part.state?.metadata || part.state, "Tool failed"),
+          }
+        }
+
+        if (status === "completed") {
+          return {
+            title: part.tool + " completed",
+            detail: summarize(part.state?.output || part.state?.input, "Tool completed"),
+          }
+        }
+
+        return {
+          title: "Running " + part.tool,
+          detail: summarize(part.state?.input, "Working..."),
+        }
+      }
+
+      function addOrUpdateActivity(key, kind, title, detail) {
+        let item = key ? activityByKey.get(key) : undefined
+
+        if (!item) {
+          item = document.createElement("div")
+          const header = document.createElement("div")
+          const titleNode = document.createElement("div")
+          const metaNode = document.createElement("div")
+          const detailNode = document.createElement("div")
+
+          item.className = "timeline-item " + kind
+          header.className = "timeline-item-header"
+          titleNode.className = "timeline-item-title"
+          metaNode.className = "timeline-item-meta"
+          detailNode.className = "timeline-item-detail"
+
+          header.append(titleNode, metaNode)
+          item.append(header, detailNode)
+          item._titleNode = titleNode
+          item._metaNode = metaNode
+          item._detailNode = detailNode
+
+          el.activityLog.prepend(item)
+          if (key) activityByKey.set(key, item)
+
+          while (el.activityLog.children.length > 60) {
+            const last = el.activityLog.lastElementChild
+            if (!last) break
+            el.activityLog.removeChild(last)
+          }
+        }
+
+        item.className = "timeline-item " + kind
+        item._titleNode.textContent = title
+        item._metaNode.textContent = new Date().toLocaleTimeString()
+        item._detailNode.textContent = detail
+      }
+
+      function ensureTimelineSeed() {
+        if (el.activityLog.children.length > 0) return
+        addOrUpdateActivity("", "system", "Waiting for events", "Connect SSE and start a session to see readable activity.")
+      }
+
+      function resetStreams() {
+        activeReasoning = ""
+        activeText = ""
+        el.reasoningOutput.textContent = ""
+        el.textOutput.textContent = ""
+        el.activityLog.textContent = ""
+        el.messagesOutput.textContent = ""
+        activityByKey.clear()
+        setOverview(el.phaseOutput, "Waiting for session")
+        setOverview(el.actionOutput, "Idle")
+        setOverview(el.toolOutput, "No tool activity yet")
+        ensureTimelineSeed()
+      }
+
+      function logEvent(payload) {
+        append(el.eventLog, payload)
+      }
+
+      function watchEvent(payload) {
+        const sessionID = el.sessionId.value.trim()
+
+        if (payload.type === "server.connected") {
+          setStatus(el.connectionStatus, "Connected to SSE", "ok")
+          addOrUpdateActivity("server.connected", "system", "SSE connected", "Subscribed to /global/event.")
+          return
+        }
+
+        if (payload.type === "server.heartbeat") {
+          return
+        }
+
+        if (payload.type === "session.status") {
+          if (!sessionID || payload.properties?.sessionID === sessionID) {
+            const statusText = describeSessionStatus(payload.properties?.status)
+            setStatus(
+              el.sessionStatus,
+              "Session status: " + statusText,
+              payload.properties?.status?.type === "idle" ? "ok" : "",
+            )
+            setOverview(el.phaseOutput, statusText)
+            setOverview(el.actionOutput, payload.properties?.status?.type === "idle" ? "Finished current turn" : "Working")
+            addOrUpdateActivity(
+              "session.status",
+              payload.properties?.status?.type === "idle" ? "done" : "system",
+              "Session " + statusText,
+              summarize(payload.properties?.status, "Status updated"),
+            )
+          }
+          return
+        }
+
+        if (payload.type === "session.error") {
+          if (!sessionID || payload.properties?.sessionID === sessionID) {
+            append(el.textOutput, "[session.error] " + JSON.stringify(payload.properties?.error ?? {}))
+            setStatus(el.sessionStatus, "Session error", "err")
+            setOverview(el.phaseOutput, "Error")
+            setOverview(el.actionOutput, "Session failed")
+            addOrUpdateActivity(
+              "session.error",
+              "error",
+              "Session error",
+              summarize(payload.properties?.error, "Unknown error"),
+            )
+          }
+          return
+        }
+
+        if (payload.type !== "message.part.updated") {
+          return
+        }
+
+        const part = payload.properties?.part
+        if (!part) return
+        if (sessionID && part.sessionID !== sessionID) return
+
+        if (part.type === "reasoning") {
+          activeReasoning = part.text ?? activeReasoning
+          el.reasoningOutput.textContent = activeReasoning
+          el.reasoningOutput.scrollTop = el.reasoningOutput.scrollHeight
+          setOverview(el.actionOutput, "Thinking")
+          addOrUpdateActivity(
+            "reasoning:" + part.id,
+            part.time?.end ? "done" : "system",
+            part.time?.end ? "Reasoning finished" : "Reasoning in progress",
+            summarize(part.text, "Thinking..."),
+          )
+          return
+        }
+
+        if (part.type === "text" && part.time?.end) {
+          activeText = part.text ?? activeText
+          el.textOutput.textContent = activeText
+          el.textOutput.scrollTop = el.textOutput.scrollHeight
+          setOverview(el.actionOutput, "Writing answer")
+          addOrUpdateActivity("text:" + part.id, "done", "Assistant reply updated", summarize(part.text, "Reply generated"))
+          return
+        }
+
+        if (part.type === "tool") {
+          const description = describeTool(part)
+          setOverview(el.actionOutput, description.title)
+          setOverview(el.toolOutput, description.detail)
+          addOrUpdateActivity(
+            "tool:" + (part.callID || part.id),
+            part.state?.status === "error" ? "error" : part.state?.status === "completed" ? "done" : "tool",
+            description.title,
+            description.detail,
+          )
+        }
+      }
+
+      function connectSse() {
+        disconnectSse()
+        resetStreams()
+        setStatus(el.connectionStatus, "Connecting...", "")
+        setOverview(el.actionOutput, "Opening SSE connection")
+
+        const url = new URL(serverBase() + "/global/event")
+
+        eventSource = new EventSource(url.toString())
+
+        eventSource.onopen = () => {
+          setStatus(el.connectionStatus, "SSE open", "ok")
+        }
+
+        eventSource.onerror = () => {
+          setStatus(el.connectionStatus, "SSE error", "err")
+        }
+
+        eventSource.onmessage = (event) => {
+          try {
+            const outer = JSON.parse(event.data)
+            const payload = outer.payload ?? outer
+            logEvent(outer)
+            watchEvent(payload)
+          } catch (error) {
+            append(el.eventLog, "[parse-error] " + String(error))
+            append(el.eventLog, event.data)
+          }
+        }
+      }
+
+      function disconnectSse() {
+        if (!eventSource) return
+        eventSource.close()
+        eventSource = undefined
+        setStatus(el.connectionStatus, "Disconnected", "")
+      }
+
+      async function verifyPath() {
+        setStatus(el.pathStatus, "Verifying path...", "")
+        const response = await fetch(serverBase() + "/path", {
+          headers: requestHeaders(),
+        })
+
+        if (!response.ok) {
+          const text = await response.text()
+          throw new Error("Verify path failed: " + response.status + " " + text)
+        }
+
+        const data = await response.json()
+        const text = "directory: " + data.directory + "\nworktree: " + data.worktree
+        setStatus(el.pathStatus, text, "ok")
+        setOverview(el.phaseOutput, "Path verified")
+        setOverview(el.actionOutput, "Server accepted workspace directory")
+        setOverview(el.toolOutput, data.directory)
+        addOrUpdateActivity("path.verify", "done", "Workspace path verified", text)
+      }
+
+      async function verifyKnowledgeFile() {
+        const filePath = el.verifyFilePath.value.trim()
+        if (!filePath) throw new Error("Enter a file path to verify")
+
+        setStatus(el.verifyFileStatus, "Reading file...", "")
+        const url = new URL(serverBase() + "/file/content")
+        url.searchParams.set("path", filePath)
+
+        const response = await fetch(url.toString(), {
+          headers: requestHeaders(),
+        })
+
+        if (!response.ok) {
+          const text = await response.text()
+          throw new Error("Read file failed: " + response.status + " " + text)
+        }
+
+        const data = await response.json()
+        const content =
+          typeof data === "string"
+            ? data
+            : typeof data?.content === "string"
+              ? data.content
+              : typeof data?.text === "string"
+                ? data.text
+                : JSON.stringify(data, null, 2)
+        const preview = content.length > 500 ? content.slice(0, 500) + "\n..." : content
+        const message = "Read OK: " + filePath + "\n\n" + preview
+        setStatus(el.verifyFileStatus, message, "ok")
+        setOverview(el.phaseOutput, "Knowledge file verified")
+        setOverview(el.actionOutput, "Read " + filePath)
+        setOverview(el.toolOutput, summarize(preview, filePath))
+        addOrUpdateActivity("knowledge.verify", "done", "Knowledge file read", "path: " + filePath + "\n" + preview)
+      }
+
+      async function showKnowledgeBaseConfig() {
+        const response = await fetch(serverBase() + "/config", {
+          headers: requestHeaders(),
+        })
+
+        if (!response.ok) {
+          const text = await response.text()
+          throw new Error("Load config failed: " + response.status + " " + text)
+        }
+
+        const data = await response.json()
+        const kb = data?.knowledgeBase
+        if (!kb) {
+          setStatus(el.verifyFileStatus, "No knowledgeBase config found in current server config", "err")
+          addOrUpdateActivity("kb.config", "error", "Knowledge base config missing", "Server config does not include knowledgeBase.")
+          return
+        }
+
+        const text = "knowledgeBase.path: " + (kb.path || "(empty)") + "\nknowledgeBase.instructions: " + (kb.instructions || "(empty)")
+        setStatus(el.verifyFileStatus, text, "ok")
+        setOverview(el.phaseOutput, "Knowledge base configured")
+        setOverview(el.actionOutput, "Loaded knowledgeBase config")
+        setOverview(el.toolOutput, kb.path || "No knowledgeBase.path")
+        addOrUpdateActivity("kb.config", "done", "Knowledge base config loaded", text)
+      }
+
+      async function createSession() {
+        setStatus(el.sessionStatus, "Creating session...", "")
+        setOverview(el.phaseOutput, "Creating session")
+        setOverview(el.actionOutput, "Requesting new session")
+        const response = await fetch(serverBase() + "/session", {
+          method: "POST",
+          headers: requestHeaders(),
+          body: JSON.stringify({}),
+        })
+
+        if (!response.ok) {
+          const text = await response.text()
+          throw new Error("Create session failed: " + response.status + " " + text)
+        }
+
+        const data = await response.json()
+        const sessionID = data?.id
+        if (!sessionID) throw new Error("Create session succeeded but no session id was returned")
+
+        el.sessionId.value = sessionID
+        setStatus(el.sessionStatus, "Session created: " + sessionID, "ok")
+        setOverview(el.phaseOutput, "Session ready")
+        setOverview(el.actionOutput, "Waiting for prompt")
+        addOrUpdateActivity("session.created", "done", "Session created", sessionID)
+      }
+
+      function modelValue() {
+        const raw = el.model.value.trim()
+        if (!raw) return undefined
+        const [providerID, ...rest] = raw.split("/")
+        if (!providerID || rest.length === 0) return undefined
+        return {
+          providerID,
+          modelID: rest.join("/"),
+        }
+      }
+
+      async function sendPromptAsync() {
+        const sessionID = el.sessionId.value.trim()
+        if (!sessionID) throw new Error("Create or paste a session id first")
+
+        resetStreams()
+        setStatus(el.sessionStatus, "Sending prompt_async...", "")
+        setOverview(el.phaseOutput, "Prompt queued")
+        setOverview(el.actionOutput, "Submitting prompt_async")
+        addOrUpdateActivity("prompt_async", "system", "Prompt submitted", summarize(el.prompt.value, "Prompt sent"))
+
+        const body = {
+          ...(el.agent.value.trim() ? { agent: el.agent.value.trim() } : {}),
+          ...(modelValue() ? { model: modelValue() } : {}),
+          parts: [
+            {
+              type: "text",
+              text: el.prompt.value,
+            },
+          ],
+        }
+
+        const response = await fetch(serverBase() + "/session/" + encodeURIComponent(sessionID) + "/prompt_async", {
+          method: "POST",
+          headers: requestHeaders(),
+          body: JSON.stringify(body),
+        })
+
+        if (!response.ok) {
+          const text = await response.text()
+          throw new Error("prompt_async failed: " + response.status + " " + text)
+        }
+
+        setStatus(el.sessionStatus, "prompt_async accepted", "ok")
+        setOverview(el.phaseOutput, "Running")
+        setOverview(el.actionOutput, "Waiting for streamed events")
+      }
+
+      function renderMessages(data) {
+        el.messagesOutput.textContent = ""
+
+        const items = Array.isArray(data) ? data : Array.isArray(data?.items) ? data.items : Array.isArray(data?.data) ? data.data : []
+        if (!Array.isArray(items) || items.length === 0) {
+          const fallback = document.createElement("div")
+          fallback.className = "message-card"
+          const body = document.createElement("div")
+          body.className = "message-part"
+          body.textContent = JSON.stringify(data, null, 2)
+          fallback.appendChild(body)
+          el.messagesOutput.appendChild(fallback)
+          return
+        }
+
+        for (const message of items) {
+          const card = document.createElement("div")
+          card.className = "message-card"
+
+          const role = document.createElement("div")
+          role.className = "message-role"
+          role.textContent = titleCase(message.info?.role || message.role || "message")
+          card.appendChild(role)
+
+          const parts = Array.isArray(message.parts) ? message.parts : []
+          for (const part of parts) {
+            const block = document.createElement("div")
+            block.className = "message-part"
+
+            if (part.type === "text") {
+              block.textContent = part.text || ""
+            } else if (part.type === "reasoning") {
+              block.className = "message-part reasoning"
+              block.textContent = "Reasoning: " + (part.text || "")
+            } else if (part.type === "tool") {
+              block.className = "message-part tool"
+              const description = describeTool(part)
+              block.textContent = description.title + "\n" + description.detail
+            } else {
+              block.textContent = titleCase(part.type) + ": " + summarize(part, "")
+            }
+
+            if (block.textContent.trim()) card.appendChild(block)
+          }
+
+          if (card.childNodes.length === 1) {
+            const empty = document.createElement("div")
+            empty.className = "message-part"
+            empty.textContent = "No readable parts in this message."
+            card.appendChild(empty)
+          }
+
+          el.messagesOutput.appendChild(card)
+        }
+      }
+
+      async function fetchMessages() {
+        const sessionID = el.sessionId.value.trim()
+        if (!sessionID) throw new Error("Create or paste a session id first")
+
+        const url = new URL(serverBase() + "/session/" + encodeURIComponent(sessionID) + "/message")
+        url.searchParams.set("directory", directoryValue())
+
+        const response = await fetch(url.toString(), {
+          headers: {
+            ...authHeaders(),
+          },
+        })
+
+        if (!response.ok) {
+          const text = await response.text()
+          throw new Error("Fetch messages failed: " + response.status + " " + text)
+        }
+
+        const data = await response.json()
+        renderMessages(data)
+      }
+
+      async function run(action) {
+        try {
+          await action()
+        } catch (error) {
+          console.error(error)
+          append(el.eventLog, "[error] " + String(error))
+          setStatus(el.sessionStatus, String(error), "err")
+          setOverview(el.phaseOutput, "Error")
+          setOverview(el.actionOutput, String(error))
+          addOrUpdateActivity("runtime.error", "error", "Request failed", String(error))
+        }
+      }
+
+      el.connectBtn.addEventListener("click", () => connectSse())
+      el.verifyPathBtn.addEventListener("click", () => run(verifyPath))
+      el.showKbConfigBtn.addEventListener("click", () => run(showKnowledgeBaseConfig))
+      el.verifyFileBtn.addEventListener("click", () => run(verifyKnowledgeFile))
+      el.disconnectBtn.addEventListener("click", () => disconnectSse())
+      el.clearLogsBtn.addEventListener("click", () => {
+        el.eventLog.textContent = ""
+        resetStreams()
+      })
+      el.createSessionBtn.addEventListener("click", () => run(createSession))
+      el.sendPromptBtn.addEventListener("click", () => run(sendPromptAsync))
+      el.fetchMessagesBtn.addEventListener("click", () => run(fetchMessages))
+
+      ensureTimelineSeed()
+    </script>
+  </body>
+</html>
